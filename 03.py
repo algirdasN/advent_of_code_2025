@@ -1,13 +1,13 @@
 def main():
     with open("data/03.txt") as file:
-        banks = [[int(x) for x in line] for line in file.read().splitlines()]
+        banks = [[x for x in line] for line in file.read().splitlines()]
 
     total = 0
     for b in banks:
         tens = max(b[:-1])
         i = b.index(tens)
         ones = max(b[i + 1:])
-        total += tens * 10 + ones
+        total += int(tens + ones)
 
     print(total)
 
@@ -23,7 +23,7 @@ def main():
             left += b[left:right].index(d) + 1
             right += 1
 
-        total += int("".join(str(x) for x in digits))
+        total += int("".join(digits))
 
     print(total)
 
