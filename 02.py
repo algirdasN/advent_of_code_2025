@@ -1,6 +1,6 @@
 import re
 
-SIMPLE_PATTERN = re.compile(r"^(.+)\1{1}$")
+SIMPLE_PATTERN = re.compile(r"^(.+)\1$")
 COMPLEX_PATTERN = re.compile(r"^(.+)\1+$")
 
 
