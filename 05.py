@@ -1,18 +1,15 @@
 def consolidate_ranges(ranges: list[range]):
-    ranges_copy = [r for r in ranges]
+    sorted_ranges = sorted(ranges, key=lambda x: x.start)
     ranges.clear()
+    ranges.append(sorted_ranges[0])
 
-    while ranges_copy:
-        r = ranges_copy.pop(0)
-        for other_r in ranges_copy:
-            min_start = min(r.start, other_r.start)
-            max_stop = max(r.stop, other_r.stop)
-            if len(r) + len(other_r) >= max_stop - min_start:
-                ranges_copy.remove(other_r)
-                ranges_copy.append(range(min_start, max_stop))
-                break
-        else:
+    for r in sorted_ranges[1:]:
+        if ranges[-1].stop < r.start:
             ranges.append(r)
+            continue
+
+        new_r = range(ranges[-1].start, max(ranges[-1].stop, r.stop))
+        ranges[-1] = new_r
 
 
 def main():
