@@ -2,9 +2,7 @@ def normalize_worksheet(worksheet):
     max_len = max(len(x) for x in worksheet)
 
     for i in range(len(worksheet)):
-        row_len = len(worksheet[i])
-        if row_len < max_len:
-            worksheet[i] += " " * (max_len - row_len)
+        worksheet[i] = worksheet[i].ljust(max_len)
 
 
 def main():
