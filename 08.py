@@ -1,4 +1,3 @@
-import math
 from copy import copy
 
 
@@ -20,17 +19,17 @@ def main():
     with open("data/08.txt") as file:
         junctions = [eval("(" + x + ")") for x in file.read().splitlines()]
 
-    distances = {}
+    square_distances = {}
     for index, i in enumerate(junctions):
         for j in junctions[index + 1:]:
-            distances[(i, j)] = math.sqrt((i[0] - j[0]) ** 2 + (i[1] - j[1]) ** 2 + (i[2] - j[2]) ** 2)
+            square_distances[(i, j)] = (i[0] - j[0]) ** 2 + (i[1] - j[1]) ** 2 + (i[2] - j[2]) ** 2
 
-    shortest_distance: list[tuple[tuple, tuple]] = [x[0] for x in sorted(distances.items(), key=lambda x: x[1])]
+    shortest_distances: list[tuple[tuple, tuple]] = [x[0] for x in sorted(square_distances.items(), key=lambda x: x[1])]
 
     clusters: list[set[tuple]] = []
 
     connections = 1000
-    for pair in shortest_distance[:connections]:
+    for pair in shortest_distances[:connections]:
         for c in clusters:
             if pair[0] in c or pair[1] in c:
                 c.add(pair[0])
@@ -45,7 +44,7 @@ def main():
     print(len(sorted_clusters[0]) * len(sorted_clusters[1]) * len(sorted_clusters[2]))
 
     while len(clusters) > 1 or len(clusters[0]) < len(junctions):
-        pair = shortest_distance[connections]
+        pair = shortest_distances[connections]
         for c in clusters:
             if pair[0] in c or pair[1] in c:
                 c.add(pair[0])
@@ -57,7 +56,7 @@ def main():
 
         connections += 1
 
-    print(shortest_distance[connections - 1][0][0] * shortest_distance[connections - 1][1][0])
+    print(shortest_distances[connections - 1][0][0] * shortest_distances[connections - 1][1][0])
 
 
 if __name__ == "__main__":
