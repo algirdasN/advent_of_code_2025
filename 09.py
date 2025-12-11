@@ -1,14 +1,25 @@
+import bisect
+
+
+def square_boundaries(square):
+    return (min(square[0][0], square[1][0]),
+            max(square[0][0], square[1][0]),
+            min(square[0][1], square[1][1]),
+            max(square[0][1], square[1][1]))
+
+
 def check_h_intersection(square, h_edges):
-    min_x = min(square[0][0], square[1][0])
-    max_x = max(square[0][0], square[1][0])
-    min_y = min(square[0][1], square[1][1])
-    max_y = max(square[0][1], square[1][1])
+    min_x, max_x, min_y, max_y = square_boundaries(square)
 
-    for x_range, y in h_edges:
-        if not min_y < y < max_y:
-            continue
+    start_index = bisect.bisect_left(h_edges, (min_y,))
 
-        if x_range.stop <= min_x or x_range.start >= max_x:
+    for i in range(start_index, len(h_edges)):
+        y, x_range = h_edges[i]
+
+        if y >= max_y:
+            break
+
+        if y <= min_y or x_range.stop <= min_x or x_range.start >= max_x:
             continue
 
         return False
@@ -17,16 +28,17 @@ def check_h_intersection(square, h_edges):
 
 
 def check_v_intersection(square, v_edges):
-    min_x = min(square[0][0], square[1][0])
-    max_x = max(square[0][0], square[1][0])
-    min_y = min(square[0][1], square[1][1])
-    max_y = max(square[0][1], square[1][1])
+    min_x, max_x, min_y, max_y = square_boundaries(square)
 
-    for x, y_range in v_edges:
-        if not min_x < x < max_x:
-            continue
+    start_index = bisect.bisect_left(v_edges, (min_x,))
 
-        if y_range.stop <= min_y or y_range.start >= max_y:
+    for i in range(start_index, len(v_edges)):
+        x, y_range = v_edges[i]
+
+        if x >= max_x:
+            break
+
+        if x <= min_x or y_range.stop <= min_y or y_range.start >= max_y:
             continue
 
         return False
@@ -44,10 +56,13 @@ def main():
     for i in range(len(points)):
         if points[i - 1][1] == points[i][1]:
             h_edges.append(
-                (range(min(points[i - 1][0], points[i][0]), max(points[i - 1][0], points[i][0])), points[i][1]))
+                (points[i][1], range(min(points[i - 1][0], points[i][0]), max(points[i - 1][0], points[i][0]))))
         else:
             v_edges.append(
                 (points[i][0], range(min(points[i - 1][1], points[i][1]), max(points[i - 1][1], points[i][1]))))
+
+    h_edges.sort(key=lambda x: x[0])
+    v_edges.sort(key=lambda x: x[0])
 
     areas = {}
     for index, i in enumerate(points):
