@@ -1,3 +1,4 @@
+import itertools
 import sys
 from collections import deque
 from time import perf_counter
@@ -51,23 +52,14 @@ def check_light(light, wirings):
 
 
 def solve_min_switches(min_equation, ranges, constraints):
-    if len(ranges) == 0:
-        return min_equation
-
+    combinations = itertools.product(*ranges)
     min_solution = sys.maxsize
-    new_ranges = ranges.copy()
-    s, r = new_ranges.popitem()
-    lambda_constraints = [sp.lambdify(s, c) for c in constraints if c.free_symbols == {s}]
-    for i in r:
-        results = [lc(i) for lc in lambda_constraints]
 
-        if any(int(x) != x or x < 0 for x in results):
+    for combo in combinations:
+        if any(int(x) != x or x < 0 for c in constraints for x in [c(*combo)]):
             continue
 
-        solution = solve_min_switches(min_equation.subs(s, i), new_ranges, [c.subs(s, i) for c in constraints])
-
-        if int(solution) == solution:
-            min_solution = min(min_solution, solution)
+        min_solution = min(min_solution, min_equation(*combo))
 
     return min_solution
 
@@ -90,11 +82,15 @@ def solve_joltage(joltage, wirings):
 
     min_equation = sum(constraints.get(x, x) for x in symbols)
 
-    ranges = {s: range(0, max_ranges[s] + 1) for s in symbols if s not in constraints}
+    if len(min_equation.free_symbols) == 0:
+        return min_equation
 
-    ans = solve_min_switches(min_equation, ranges, constraints.values())
+    free_symbols = [s for s in symbols if s not in constraints]
 
-    return ans
+    ranges = [range(0, max_ranges[s] + 1) for s in free_symbols]
+
+    return solve_min_switches(sp.lambdify(free_symbols, min_equation), ranges,
+                              [sp.lambdify(free_symbols, c) for c in constraints.values()])
 
 
 def main():
