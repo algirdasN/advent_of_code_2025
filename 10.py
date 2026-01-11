@@ -57,13 +57,14 @@ def solve_min_switches(min_equation, ranges, constraints):
     min_solution = sys.maxsize
     new_ranges = ranges.copy()
     s, r = new_ranges.popitem()
+    lambda_constraints = [sp.lambdify(s, c) for c in constraints if c.free_symbols == {s}]
     for i in r:
-        new_constraints = [c.subs(s, i) for c in constraints]
+        results = [lc(i) for lc in lambda_constraints]
 
-        if any(int(x) != x or x < 0 for x in new_constraints if len(x.free_symbols) == 0):
+        if any(int(x) != x or x < 0 for x in results):
             continue
 
-        solution = solve_min_switches(min_equation.subs(s, i), new_ranges, new_constraints)
+        solution = solve_min_switches(min_equation.subs(s, i), new_ranges, [c.subs(s, i) for c in constraints])
 
         if int(solution) == solution:
             min_solution = min(min_solution, solution)
@@ -71,15 +72,15 @@ def solve_min_switches(min_equation, ranges, constraints):
     return min_solution
 
 
-def solve_joltage(joltage, wiring):
+def solve_joltage(joltage, wirings):
     equations = [-x for x in joltage]
 
-    for i in range(len(wiring)):
+    for i in range(len(wirings)):
         exec(f"switch{i} = sp.Symbol('switch{i}', integer=True)")
 
     symbols = [v for k, v in locals().items() if k.startswith(f"switch")]
 
-    for i, e in enumerate(wiring):
+    for i, e in enumerate(wirings):
         for w in e:
             equations[w] += symbols[i]
 
