@@ -56,10 +56,12 @@ def solve_min_switches(min_equation, ranges, constraints):
     min_solution = sys.maxsize
 
     for combo in combinations:
-        if any(int(x) != x or x < 0 for c in constraints for x in [c(*combo)]):
-            continue
-
-        min_solution = min(min_solution, min_equation(*combo))
+        for c in constraints:
+            val = c(*combo)
+            if val < 0 or val % 1 != 0:  # val % 1 != 0 is a fast way to check for integers
+                break
+        else:
+            min_solution = min(min_solution, min_equation(*combo))
 
     return min_solution
 
