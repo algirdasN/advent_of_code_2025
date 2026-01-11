@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 YOU = "you"
 OUT = "out"
 SVR = "svr"
@@ -14,33 +12,23 @@ def walk_simple(connections, curr, end):
     return sum(walk_simple(connections, x, end) for x in connections[curr])
 
 
-def walk_complex(connections, curr, end, valid_paths: defaultdict[str, int], invalid: set):
+def walk_complex(connections, curr, end, valid_paths):
     if curr == end:
         return 1
 
-    if curr in valid_paths:
-        return valid_paths[curr]
+    if curr not in valid_paths:
+        valid_paths[curr] = sum(walk_complex(connections, x, end, valid_paths) for x in connections[curr])
 
-    if curr in invalid:
-        return 0
-
-    total = sum(walk_complex(connections, x, end, valid_paths, invalid) for x in connections[curr])
-
-    if total == 0:
-        invalid.add(curr)
-    else:
-        valid_paths[curr] = total
-
-    return total
+    return valid_paths[curr]
 
 
 def path_svr_to_out(connections):
-    svr_to_dac = walk_complex(connections, SVR, DAC, defaultdict(int), {FFT, OUT})
-    svr_to_fft = walk_complex(connections, SVR, FFT, defaultdict(int), {DAC, OUT})
-    dac_to_fft = walk_complex(connections, DAC, FFT, defaultdict(int), {OUT})
-    fft_to_dac = walk_complex(connections, FFT, DAC, defaultdict(int), {OUT})
-    dac_to_out = walk_complex(connections, DAC, OUT, defaultdict(int), {FFT})
-    fft_to_out = walk_complex(connections, FFT, OUT, defaultdict(int), {DAC})
+    svr_to_dac = walk_complex(connections, SVR, DAC, {FFT: 0, OUT: 0})
+    svr_to_fft = walk_complex(connections, SVR, FFT, {DAC: 0, OUT: 0})
+    dac_to_fft = walk_complex(connections, DAC, FFT, {OUT: 0})
+    fft_to_dac = walk_complex(connections, FFT, DAC, {OUT: 0})
+    dac_to_out = walk_complex(connections, DAC, OUT, {FFT: 0})
+    fft_to_out = walk_complex(connections, FFT, OUT, {DAC: 0})
 
     return svr_to_dac * dac_to_fft * fft_to_out + svr_to_fft * fft_to_dac * dac_to_out
 
