@@ -1,9 +1,11 @@
 import itertools
+import math
 import sys
 from collections import deque
 from time import perf_counter
 
 import sympy as sp
+from sympy import GreaterThan, LessThan
 
 
 class Move:
@@ -51,6 +53,28 @@ def check_light(light, wirings):
     return None
 
 
+def shrink_ranges(max_ranges, free_symbols, constraints):
+    ranges = []
+
+    for s in free_symbols:
+        min_val = 0
+        max_val = max_ranges[s]
+
+        for c in constraints.values():
+            if c.free_symbols != {s}:
+                continue
+
+            canonical = sp.reduce_inequalities(c >= 0, s).canonical
+            if isinstance(canonical, GreaterThan):
+                min_val = max(min_val, math.ceil(canonical.rhs))
+            if isinstance(canonical, LessThan):
+                max_val = min(max_val, math.floor(canonical.rhs))
+
+        ranges.append(range(min_val, max_val + 1))
+
+    return ranges
+
+
 def solve_min_switches(min_equation, ranges, constraints):
     combinations = itertools.product(*ranges)
     min_solution = sys.maxsize
@@ -58,7 +82,7 @@ def solve_min_switches(min_equation, ranges, constraints):
     for combo in combinations:
         for c in constraints:
             val = c(*combo)
-            if val < 0 or val % 1 != 0:  # val % 1 != 0 is a fast way to check for integers
+            if val < 0 or val % 1 != 0:
                 break
         else:
             min_solution = min(min_solution, min_equation(*combo))
@@ -69,10 +93,7 @@ def solve_min_switches(min_equation, ranges, constraints):
 def solve_joltage(joltage, wirings):
     equations = [-x for x in joltage]
 
-    for i in range(len(wirings)):
-        exec(f"switch{i} = sp.Symbol('switch{i}', integer=True)")
-
-    symbols = [v for k, v in locals().items() if k.startswith(f"switch")]
+    symbols = [sp.Symbol(f's{i}', integer=True) for i in range(len(wirings))]
 
     for i, e in enumerate(wirings):
         for w in e:
@@ -89,7 +110,7 @@ def solve_joltage(joltage, wirings):
 
     free_symbols = [s for s in symbols if s not in constraints]
 
-    ranges = [range(0, max_ranges[s] + 1) for s in free_symbols]
+    ranges = shrink_ranges(max_ranges, free_symbols, constraints)
 
     return solve_min_switches(sp.lambdify(free_symbols, min_equation), ranges,
                               [sp.lambdify(free_symbols, c) for c in constraints.values()])
