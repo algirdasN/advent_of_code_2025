@@ -2,17 +2,9 @@ import itertools
 import math
 import sys
 from collections import deque
-from time import perf_counter
 
 import sympy as sp
 from sympy import GreaterThan, LessThan
-
-
-class Move:
-    def __init__(self, value, num_wirings, used_wirings):
-        self.value: int = value
-        self.num_switches: int = num_wirings
-        self.used_switches: list[int] = used_wirings
 
 
 def light_to_int(lights: str):
@@ -29,27 +21,18 @@ def wiring_to_int(wiring: list[int]):
 
 
 def check_light(light, wirings):
-    moves = deque()
-    for w in wirings:
-        moves.append(Move(w, 1, [w]))
+    queue = deque([(0, 0)])  # (current_state, num_switches)
+    visited = {0}
 
-    if any(m.value == light for m in moves):
-        return 1
+    while queue:
+        current, count = queue.popleft()
+        if current == light: return count
 
-    while moves:
-        move = moves.popleft()
         for w in wirings:
-            if w in move.used_switches:
-                continue
-
-            new_value = move.value ^ w
-            new_num = move.num_switches + 1
-            if new_value == light:
-                return new_num
-
-            new_used = move.used_switches + [w]
-            moves.append(Move(new_value, new_num, new_used))
-
+            nxt = current ^ w
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append((nxt, count + 1))
     return None
 
 
@@ -60,7 +43,7 @@ def shrink_ranges(max_ranges, free_symbols, constraints):
         min_val = 0
         max_val = max_ranges[s]
 
-        for c in constraints.values():
+        for c in constraints:
             if c.free_symbols != {s}:
                 continue
 
@@ -110,7 +93,7 @@ def solve_joltage(joltage, wirings):
 
     free_symbols = [s for s in symbols if s not in constraints]
 
-    ranges = shrink_ranges(max_ranges, free_symbols, constraints)
+    ranges = shrink_ranges(max_ranges, free_symbols, constraints.values())
 
     return solve_min_switches(sp.lambdify(free_symbols, min_equation), ranges,
                               [sp.lambdify(free_symbols, c) for c in constraints.values()])
