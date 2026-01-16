@@ -10,18 +10,18 @@ def build_shapes(shape_input):
     return shapes
 
 
-def grid_to_shape(grid):
-    shapes = []
+def grid_to_shape(shape_grid):
+    variants = []
     for _ in range(4):
-        shapes.append(grid_to_ints(grid))
-        grid = rotate_grid(grid)
+        variants.append(grid_to_ints(shape_grid))
+        shape_grid = rotate_grid(shape_grid)
 
-    grid = [list(row) for row in zip(*grid)]
+    shape_grid = [list(row) for row in zip(*shape_grid)]
     for _ in range(4):
-        shapes.append(grid_to_ints(grid))
-        grid = rotate_grid(grid)
+        variants.append(grid_to_ints(shape_grid))
+        shape_grid = rotate_grid(shape_grid)
 
-    return frozenset(shapes)
+    return frozenset(variants)
 
 
 def grid_to_ints(grid):
@@ -39,19 +39,19 @@ def rotate_grid(grid):
     new_grid = [["."] * len(x) for x in grid]
     for i in range(len(grid)):
         for j in range(len(grid[0])):
-            new_grid[j][2 - i] = grid[i][j]
+            new_grid[j][len(grid) - 1 - i] = grid[i][j]
 
     return new_grid
 
 
-def parse_regions(regions):
-    result = []
-    for r in regions.splitlines():
-        dimensions, quantity = r.split(": ")
+def parse_regions(region_input):
+    regions = []
+    for region in region_input.splitlines():
+        dimensions, quantity = region.split(": ")
 
-        result.append(tuple((tuple(int(x) for x in dimensions.split("x")), [int(x) for x in quantity.split(" ")])))
+        regions.append(tuple((tuple(int(x) for x in dimensions.split("x")), [int(x) for x in quantity.split(" ")])))
 
-    return result
+    return regions
 
 
 def compute_shape_sizes(shapes):
@@ -63,12 +63,12 @@ def compute_shape_sizes(shapes):
 def solve_region(region, shapes):
     dimensions, quantity = region
     rem_shapes = {}
-    for i, x in enumerate(quantity):
-        if x == 0:
+    for index, amount in enumerate(quantity):
+        if amount == 0:
             continue
 
-        bitmasks = frozenset(shape_to_bitmask(variant, dimensions[0]) for variant in shapes[i])
-        rem_shapes[bitmasks] = x
+        bitmasks = frozenset(shape_to_bitmask(variant, dimensions[0]) for variant in shapes[index])
+        rem_shapes[bitmasks] = amount
 
     compute_shape_sizes(rem_shapes.keys())
 
