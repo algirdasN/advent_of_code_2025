@@ -1,3 +1,8 @@
+from time import perf_counter
+
+SHAPE_SIZES = {}
+
+
 def build_shapes(shape_input):
     shapes = []
 
@@ -51,6 +56,11 @@ def parse_regions(regions):
     return result
 
 
+def compute_shape_sizes(shapes):
+    for s in shapes:
+        SHAPE_SIZES[s] = sum(bin(row).count('1') for row in next(iter(s)))
+
+
 def solve_region(region, shapes):
     dimensions, quantity = region
     rem_shapes = {}
@@ -73,7 +83,7 @@ def walk(dimensions, grid, rem_shapes, start_row=0, start_column=0):
         for j in range(start_column, dimensions[1] - 2):
             start_column = 0
 
-            if get_shape_size(rem_shapes) > (dimensions[0] - i) * dimensions[1] - j:
+            if sum(SHAPE_SIZES[k] * v for k, v in rem_shapes.items()) > (dimensions[0] - i) * dimensions[1] - j:
                 return False
 
             for shape, amount in rem_shapes.items():
@@ -96,15 +106,6 @@ def walk(dimensions, grid, rem_shapes, start_row=0, start_column=0):
     return False
 
 
-def get_shape_size(shapes):
-    total = 0
-    for shape_set, amount in shapes.items():
-        for row in next(iter(shape_set)):
-            total += amount * bin(row).count('1')
-
-    return total
-
-
 def can_place_shape(grid, shape, x, y):
     for i, s in enumerate(shape):
         if grid[x + i] & (s << y) != 0:
@@ -124,8 +125,11 @@ def main():
 
     shapes = build_shapes(contents[:-1])
     regions = parse_regions(contents[-1])
+    compute_shape_sizes(shapes)
 
+    start = perf_counter()
     print(sum(solve_region(r, shapes) for r in regions))
+    print(perf_counter() - start)
 
 
 if __name__ == "__main__":
