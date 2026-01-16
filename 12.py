@@ -65,12 +65,14 @@ def solve_region(region, shapes):
     return walk(dimensions, grid, rem_shapes)
 
 
-def walk(dimensions, grid, rem_shapes, start_row=0):
+def walk(dimensions, grid, rem_shapes, start_row=0, start_column=0):
     if sum(rem_shapes.values()) == 0:
         return True
 
     for i in range(start_row, dimensions[0] - 2):
-        for j in range(dimensions[1] - 2):
+        for j in range(start_column, dimensions[1] - 2):
+            start_column = 0
+
             if get_shape_size(rem_shapes) > (dimensions[0] - i) * dimensions[1] - j:
                 return False
 
@@ -85,7 +87,7 @@ def walk(dimensions, grid, rem_shapes, start_row=0):
                     place_shape(grid, variant, i, j)
                     rem_shapes[shape] -= 1
 
-                    if walk(dimensions, grid, rem_shapes, i):
+                    if walk(dimensions, grid, rem_shapes, i, j + 1):
                         return True
 
                     place_shape(grid, variant, i, j)
