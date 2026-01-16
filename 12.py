@@ -8,17 +8,17 @@ def build_shapes(shape_input):
 
 
 def grid_to_shape(grid):
-    shape_set = set()
+    shapes = []
     for _ in range(4):
-        shape_set.add(grid_to_ints(grid))
+        shapes.append(grid_to_ints(grid))
         grid = rotate_grid(grid)
 
     grid = [list(row) for row in zip(*grid)]
     for _ in range(4):
-        shape_set.add(grid_to_ints(grid))
+        shapes.append(grid_to_ints(grid))
         grid = rotate_grid(grid)
 
-    return shape_set
+    return frozenset(shapes)
 
 
 def grid_to_ints(grid):
@@ -53,10 +53,12 @@ def parse_regions(regions):
 
 def solve_region(region, shapes):
     dimensions, quantity = region
-    rem_shapes = []
+    rem_shapes = {}
     for i, x in enumerate(quantity):
-        for _ in range(x):
-            rem_shapes.append(shapes[i])
+        if x == 0:
+            continue
+
+        rem_shapes[shapes[i]] = x
 
     grid = [0 for _ in range(dimensions[0])]
 
@@ -64,36 +66,39 @@ def solve_region(region, shapes):
 
 
 def walk(dimensions, grid, rem_shapes, start_row=0):
-    if len(rem_shapes) == 0:
+    if sum(rem_shapes.values()) == 0:
         return True
-
-    next_shape = rem_shapes[0]
 
     for i in range(start_row, dimensions[0] - 2):
         for j in range(dimensions[1] - 2):
             if get_shape_size(rem_shapes) > (dimensions[0] - i) * dimensions[1] - j:
                 return False
 
-            for shape in next_shape:
-                if not can_place_shape(grid, shape, i, j):
+            for shape, amount in rem_shapes.items():
+                if amount == 0:
                     continue
 
-                place_shape(grid, shape, i, j)
-                if walk(dimensions, grid, rem_shapes[1:], i):
-                    return True
+                for variant in shape:
+                    if not can_place_shape(grid, variant, i, j):
+                        continue
 
-                place_shape(grid, shape, i, j)
+                    place_shape(grid, variant, i, j)
+                    rem_shapes[shape] -= 1
+
+                    if walk(dimensions, grid, rem_shapes, i):
+                        return True
+
+                    place_shape(grid, variant, i, j)
+                    rem_shapes[shape] += 1
 
     return False
 
 
 def get_shape_size(shapes):
     total = 0
-    for shape_set in shapes:
+    for shape_set, amount in shapes.items():
         for row in next(iter(shape_set)):
-            while row > 0:
-                total += row % 2
-                row >>= 1
+            total += amount * bin(row).count('1')
 
     return total
 
