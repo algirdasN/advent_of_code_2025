@@ -1,5 +1,3 @@
-from time import perf_counter
-
 SHAPE_SIZES = {}
 
 
@@ -57,8 +55,9 @@ def parse_regions(regions):
 
 
 def compute_shape_sizes(shapes):
+    SHAPE_SIZES.clear()
     for s in shapes:
-        SHAPE_SIZES[s] = sum(bin(row).count('1') for row in next(iter(s)))
+        SHAPE_SIZES[s] = next(iter(s)).bit_count()
 
 
 def solve_region(region, shapes):
@@ -68,11 +67,21 @@ def solve_region(region, shapes):
         if x == 0:
             continue
 
-        rem_shapes[shapes[i]] = x
+        bitmasks = frozenset(shape_to_bitmask(variant, dimensions[0]) for variant in shapes[i])
+        rem_shapes[bitmasks] = x
 
-    grid = [0 for _ in range(dimensions[0])]
+    compute_shape_sizes(rem_shapes.keys())
 
-    return walk(dimensions, grid, rem_shapes)
+    return walk(dimensions, 0, rem_shapes)
+
+
+def shape_to_bitmask(shape, width):
+    result = 0
+    for s in reversed(shape):
+        result <<= width
+        result += s
+
+    return result
 
 
 def walk(dimensions, grid, rem_shapes, start_row=0, start_column=0):
@@ -91,32 +100,20 @@ def walk(dimensions, grid, rem_shapes, start_row=0, start_column=0):
                     continue
 
                 for variant in shape:
-                    if not can_place_shape(grid, variant, i, j):
+                    variant_mask = variant << (i * dimensions[1] + j)
+                    if grid & variant_mask != 0:
                         continue
 
-                    place_shape(grid, variant, i, j)
+                    grid ^= variant_mask
                     rem_shapes[shape] -= 1
 
                     if walk(dimensions, grid, rem_shapes, i, j + 1):
                         return True
 
-                    place_shape(grid, variant, i, j)
+                    grid ^= variant_mask
                     rem_shapes[shape] += 1
 
     return False
-
-
-def can_place_shape(grid, shape, x, y):
-    for i, s in enumerate(shape):
-        if grid[x + i] & (s << y) != 0:
-            return False
-
-    return True
-
-
-def place_shape(grid, shape, x, y):
-    for i, s in enumerate(shape):
-        grid[x + i] ^= s << y
 
 
 def main():
@@ -125,11 +122,8 @@ def main():
 
     shapes = build_shapes(contents[:-1])
     regions = parse_regions(contents[-1])
-    compute_shape_sizes(shapes)
 
-    start = perf_counter()
     print(sum(solve_region(r, shapes) for r in regions))
-    print(perf_counter() - start)
 
 
 if __name__ == "__main__":
