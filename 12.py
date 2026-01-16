@@ -63,25 +63,39 @@ def solve_region(region, shapes):
     return walk(dimensions, grid, rem_shapes)
 
 
-def walk(dimensions, grid, rem_shapes):
+def walk(dimensions, grid, rem_shapes, start_row=0):
     if len(rem_shapes) == 0:
         return True
 
     next_shape = rem_shapes[0]
 
-    for i in range(dimensions[0] - 2):
+    for i in range(start_row, dimensions[0] - 2):
         for j in range(dimensions[1] - 2):
+            if get_shape_size(rem_shapes) > (dimensions[0] - i) * dimensions[1] - j:
+                return False
+
             for shape in next_shape:
                 if not can_place_shape(grid, shape, i, j):
                     continue
 
                 place_shape(grid, shape, i, j)
-                if walk(dimensions, grid, rem_shapes[1:]):
+                if walk(dimensions, grid, rem_shapes[1:], i):
                     return True
 
                 place_shape(grid, shape, i, j)
 
     return False
+
+
+def get_shape_size(shapes):
+    total = 0
+    for shape_set in shapes:
+        for row in next(iter(shape_set)):
+            while row > 0:
+                total += row % 2
+                row >>= 1
+
+    return total
 
 
 def can_place_shape(grid, shape, x, y):
@@ -103,12 +117,8 @@ def main():
 
     shapes = build_shapes(contents[:-1])
     regions = parse_regions(contents[-1])
-    pass
-    total = 0
-    for r in regions:
-        total += solve_region(r, shapes)
 
-    print(total)
+    print(sum(solve_region(r, shapes) for r in regions))
 
 
 if __name__ == "__main__":
