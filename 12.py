@@ -72,7 +72,7 @@ def solve_region(region, shapes):
 
     compute_shape_sizes(rem_shapes.keys())
 
-    return walk(dimensions, 0, rem_shapes)
+    return walk(dimensions[0] * dimensions[1], 0, rem_shapes)
 
 
 def shape_to_bitmask(shape, width):
@@ -84,34 +84,31 @@ def shape_to_bitmask(shape, width):
     return result
 
 
-def walk(dimensions, grid, rem_shapes, start_row=0, start_column=0):
+def walk(grid_size, grid, rem_shapes, start_index=0):
     if sum(rem_shapes.values()) == 0:
         return True
 
-    for i in range(start_row, dimensions[0] - 2):
-        for j in range(start_column, dimensions[1] - 2):
-            start_column = 0
+    for i in range(start_index, grid_size):
+        if sum(SHAPE_SIZES[k] * v for k, v in rem_shapes.items()) > grid_size - i:
+            return False
 
-            if sum(SHAPE_SIZES[k] * v for k, v in rem_shapes.items()) > (dimensions[0] - i) * dimensions[1] - j:
-                return False
+        for shape, amount in rem_shapes.items():
+            if amount == 0:
+                continue
 
-            for shape, amount in rem_shapes.items():
-                if amount == 0:
+            for variant in shape:
+                variant_mask = variant << i
+                if grid & variant_mask != 0:
                     continue
 
-                for variant in shape:
-                    variant_mask = variant << (i * dimensions[1] + j)
-                    if grid & variant_mask != 0:
-                        continue
+                grid ^= variant_mask
+                rem_shapes[shape] -= 1
 
-                    grid ^= variant_mask
-                    rem_shapes[shape] -= 1
+                if walk(grid_size, grid, rem_shapes, i + 1):
+                    return True
 
-                    if walk(dimensions, grid, rem_shapes, i, j + 1):
-                        return True
-
-                    grid ^= variant_mask
-                    rem_shapes[shape] += 1
+                grid ^= variant_mask
+                rem_shapes[shape] += 1
 
     return False
 
